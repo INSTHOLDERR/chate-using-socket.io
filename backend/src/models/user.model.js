@@ -22,6 +22,10 @@ const userSchema = new Schema(
       type: String,
       default: "",
     },
+    googleId: {
+      type: String,
+      sparse: true,
+    },
   },
   {
     timestamps: true,
