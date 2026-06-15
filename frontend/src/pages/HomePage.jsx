@@ -13,15 +13,14 @@ const HomePage = () => {
   }, [setSelectedUser]);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex pt-16">
+    <div className="h-[calc(100vh-4rem)] lg:h-[calc(100vh-5rem)] flex bg-base-200">
+      <div className="flex flex-1 min-h-0 w-full max-w-7xl mx-auto bg-base-100 overflow-hidden">
 
-      <div className="flex w-full max-w-7xl mx-auto h-[calc(100vh-4rem)] overflow-hidden bg-white">
-
-    
+        {/* SIDEBAR */}
         <div
           className={`
             ${selectedUser ? "hidden md:flex" : "flex"}
-            w-full md:w-[300px] border-r
+            w-full md:w-[300px] lg:w-[340px] border-r flex-shrink-0
           `}
         >
           <Sidebar />
@@ -31,14 +30,13 @@ const HomePage = () => {
         <div
           className={`
             ${selectedUser ? "flex" : "hidden md:flex"}
-            flex-1 flex flex-col
+            flex-1 flex-col min-w-0
           `}
         >
           {!selectedUser ? <NoChatSelected /> : <ChatContainer />}
         </div>
 
       </div>
-
     </div>
   );
 };

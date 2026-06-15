@@ -21,8 +21,8 @@ const ProfilePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 px-4 py-10 flex justify-center items-center">
-      <div className="w-full max-w-3xl bg-white rounded-xl shadow-md p-6 sm:p-8">
+    <div className="min-h-screen bg-base-200 px-4 py-10 flex justify-center items-center">
+      <div className="w-full max-w-3xl bg-base-100 rounded-xl shadow-md p-6 sm:p-8">
 
         {/* HEADER */}
         <div className="flex flex-col sm:flex-row items-center gap-6">
@@ -48,10 +48,10 @@ const ProfilePage = () => {
 
           {/* USER INFO */}
           <div className="text-center sm:text-left">
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-2xl font-bold text-base-content">
               {authUser?.fullName}
             </h2>
-            <p className="text-gray-500 text-sm">
+            <p className="text-base-content/60 text-sm">
               {authUser?.email}
             </p>
 
@@ -67,25 +67,25 @@ const ProfilePage = () => {
         {/* DETAILS */}
         <div className="mt-8 grid sm:grid-cols-2 gap-4">
 
-          <div className="border rounded-lg p-4">
-            <p className="text-sm text-gray-500">Full Name</p>
+          <div className="border border-base-200 rounded-lg p-4 bg-base-200/40">
+            <p className="text-sm text-base-content/60">Full Name</p>
             <p className="font-medium mt-1">{authUser?.fullName}</p>
           </div>
 
-          <div className="border rounded-lg p-4">
-            <p className="text-sm text-gray-500">Email</p>
+          <div className="border border-base-200 rounded-lg p-4 bg-base-200/40">
+            <p className="text-sm text-base-content/60">Email</p>
             <p className="font-medium mt-1">{authUser?.email}</p>
           </div>
 
-          <div className="border rounded-lg p-4">
-            <p className="text-sm text-gray-500">Member Since</p>
+          <div className="border border-base-200 rounded-lg p-4 bg-base-200/40">
+            <p className="text-sm text-base-content/60">Member Since</p>
             <p className="font-medium mt-1">
               {authUser?.createdAt?.split("T")[0]}
             </p>
           </div>
 
-          <div className="border rounded-lg p-4">
-            <p className="text-sm text-gray-500">Status</p>
+          <div className="border border-base-200 rounded-lg p-4 bg-base-200/40">
+            <p className="text-sm text-base-content/60">Status</p>
             <p className="font-medium text-green-500 mt-1">Active</p>
           </div>
 

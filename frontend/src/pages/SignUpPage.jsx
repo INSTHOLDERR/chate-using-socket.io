@@ -72,13 +72,13 @@ const SignUpPage = () => {
     <>
       <div className="min-h-screen grid lg:grid-cols-2">
         {/* LEFT SIDE */}
-        <div className="flex items-center justify-center px-6 py-10 bg-white">
+        <div className="flex items-center justify-center px-6 py-10 bg-base-100">
           <div className="w-full max-w-md space-y-6">
             <div>
-              <h2 className="text-3xl font-bold text-gray-800">
+              <h2 className="text-3xl font-bold text-base-content">
                 Create Account 🚀
               </h2>
-              <p className="text-gray-500 text-sm mt-1">
+              <p className="text-base-content/60 text-sm mt-1">
                 Join and start chatting instantly
               </p>
             </div>
@@ -90,7 +90,7 @@ const SignUpPage = () => {
                 </label>
                 <input
                   type="text"
-                  className="w-full mt-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
+                  className="w-full mt-1 border border-base-300 bg-base-100 text-base-content rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
                   placeholder="John Doe"
                   value={formData.fullName}
                   onChange={(e) =>
@@ -105,7 +105,7 @@ const SignUpPage = () => {
                 </label>
                 <input
                   type="email"
-                  className="w-full mt-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
+                  className="w-full mt-1 border border-base-300 bg-base-100 text-base-content rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
                   placeholder="you@example.com"
                   value={formData.email}
                   onChange={(e) =>
@@ -120,7 +120,7 @@ const SignUpPage = () => {
                 </label>
                 <input
                   type="password"
-                  className="w-full mt-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
+                  className="w-full mt-1 border border-base-300 bg-base-100 text-base-content rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) =>
@@ -135,7 +135,7 @@ const SignUpPage = () => {
                 </label>
                 <input
                   type="password"
-                  className="w-full mt-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
+                  className="w-full mt-1 border border-base-300 bg-base-100 text-base-content rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
                   placeholder="••••••••"
                   value={formData.confirmPassword}
                   onChange={(e) =>
@@ -152,7 +152,7 @@ const SignUpPage = () => {
               </button>
             </form>
 
-            <p className="text-sm text-center text-gray-500">
+            <p className="text-sm text-center text-base-content/60">
               Already have an account?{" "}
               <Link to="/login" className="text-blue-500 font-medium">
                 Login
