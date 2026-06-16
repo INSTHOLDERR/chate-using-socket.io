@@ -5,6 +5,7 @@ import cors from "cors";
 import dns from "dns";
 import path from "path";
 import { fileURLToPath } from "url";
+
 import { connectDB } from "./lib/db.js";
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
@@ -13,9 +14,15 @@ import { app, server } from "./lib/socket.js";
 dotenv.config();
 
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
+
 const { PORT, NODE_ENV } = process.env;
+
+// Correctly resolve __dirname in ES modules — works on Windows & Linux
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// __dirname is now: <project-root>/backend/src
+// frontend/dist is: <project-root>/frontend/dist
 const frontendDist = path.join(__dirname, "..", "..", "frontend", "dist");
 
 app.use(express.json({ limit: "10mb" }));

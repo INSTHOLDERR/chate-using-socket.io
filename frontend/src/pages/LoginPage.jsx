@@ -1,89 +1,54 @@
 import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
-import { Link, useNavigate } from "react-router-dom";
-import { GoogleLogin } from "@react-oauth/google";
+import { Link } from "react-router-dom";
 import ForgotPasswordModal from "../components/ForgotPasswordModal";
 import toast from "react-hot-toast";
 
 const LoginPage = () => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const { login, isLoggingIn, googleAuth } = useAuthStore();
-  const navigate = useNavigate();
+  const { login, isLoggingIn } = useAuthStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!formData.email || !formData.password) {
       toast.error("Please fill in all fields");
       return;
     }
-    
     await login(formData);
-  };
-
-  const handleGoogleSuccess = async (response) => {
-    const success = await googleAuth(response.credential);
-    if (success) {
-   
-      setTimeout(() => {
-        navigate("/");
-      }, 100);
-    }
-  };
-
-  const handleGoogleError = () => {
-    console.log("Google login failed");
-    toast.error("Google login failed. Please try again.");
   };
 
   return (
     <>
       <div className="min-h-screen grid lg:grid-cols-2">
-
         <div className="flex items-center justify-center px-6 py-10 bg-base-100">
           <div className="w-full max-w-md space-y-6">
             <div>
-              <h2 className="text-3xl font-bold text-base-content">
-                Welcome Back 👋
-              </h2>
-              <p className="text-base-content/60 text-sm mt-1">
-                Login to continue chatting
-              </p>
+              <h2 className="text-3xl font-bold text-base-content">Welcome Back 👋</h2>
+              <p className="text-base-content/60 text-sm mt-1">Login to continue chatting</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-600">
-                  Email
-                </label>
+                <label className="text-sm font-medium text-gray-600">Email</label>
                 <input
                   type="email"
                   className="w-full mt-1 border border-base-300 bg-base-100 text-base-content rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
                   placeholder="you@example.com"
                   value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
                 />
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-600">
-                  Password
-                </label>
+                <label className="text-sm font-medium text-gray-600">Password</label>
                 <input
                   type="password"
                   className="w-full mt-1 border border-base-300 bg-base-100 text-base-content rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
                   placeholder="••••••••"
                   value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
                 />
               </div>
@@ -114,26 +79,6 @@ const LoginPage = () => {
               </button>
             </form>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-base-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-base-content/60">Or continue with</span>
-              </div>
-            </div>
-
-            <div className="flex justify-center">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                useOneTap
-                theme="filled_blue"
-                shape="rectangular"
-                text="continue_with"
-              />
-            </div>
-
             <p className="text-sm text-center text-base-content/60">
               Don't have an account?{" "}
               <Link to="/signup" className="text-blue-500 font-medium hover:text-blue-600 transition">
@@ -143,12 +88,9 @@ const LoginPage = () => {
           </div>
         </div>
 
-  
         <div className="hidden lg:flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600">
           <div className="text-center text-white px-10">
-            <h2 className="text-4xl font-bold mb-4">
-              Stay Connected 💬
-            </h2>
+            <h2 className="text-4xl font-bold mb-4">Stay Connected 💬</h2>
             <p className="text-lg opacity-90">
               Chat in real-time, share moments, and connect with people instantly.
             </p>
