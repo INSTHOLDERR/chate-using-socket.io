@@ -22,39 +22,42 @@ export const useAuthStore = create((set, get) => ({
       const res = await axiosInstance.get("/auth/check");
       set({ authUser: res.data });
       get().connectSocket();
-    } catch (error) {
-      console.log("Error in checkAuth:", error);
+    } catch {
       set({ authUser: null });
     } finally {
       set({ isCheckingAuth: false });
     }
   },
 
-  // Send OTP for signup
+  // ── SIGNUP ──────────────────────────────────────
   sendSignupOTP: async (email) => {
     try {
-      const response = await axiosInstance.post("/auth/send-signup-otp", { email });
-      if (response.data.message) {
-        toast.success("OTP sent to your email");
-        set({ otpSent: true });
-        return true;
-      }
+      await axiosInstance.post("/auth/send-signup-otp", { email });
+      toast.success("OTP sent to your email");
+      set({ otpSent: true });
+      return true;
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to send OTP");
       return false;
     }
   },
 
-  // Verify OTP and complete signup
+  resendSignupOTP: async (email) => {
+    try {
+      await axiosInstance.post("/auth/send-signup-otp", { email });
+      return true;
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to resend OTP");
+      return false;
+    }
+  },
+
   verifySignup: async (formData, otp) => {
     set({ isSigningUp: true });
     try {
-      const response = await axiosInstance.post("/auth/verify-signup", {
-        ...formData,
-        otp,
-      });
-      set({ authUser: response.data, otpVerified: true });
-      toast.success("Account created successfully");
+      const res = await axiosInstance.post("/auth/verify-signup", { ...formData, otp });
+      set({ authUser: res.data, otpVerified: true });
+      toast.success("Account created successfully!");
       get().connectSocket();
       return true;
     } catch (error) {
@@ -65,21 +68,48 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-
-  login: async (data) => {
+  // ── LOGIN with OTP ───────────────────────────────
+  sendLoginOTP: async (email, password) => {
     set({ isLoggingIn: true });
     try {
-      const res = await axiosInstance.post("/auth/login", data);
-      set({ authUser: res.data });
-      toast.success("Logged in successfully");
-      get().connectSocket();
+      await axiosInstance.post("/auth/send-login-otp", { email, password });
+      toast.success("OTP sent to your email");
+      return true;
     } catch (error) {
-      toast.error(error.response?.data?.message || "Login failed");
+      toast.error(error.response?.data?.message || "Failed to send OTP");
+      return false;
     } finally {
       set({ isLoggingIn: false });
     }
   },
 
+  resendLoginOTP: async (email, password) => {
+    try {
+      await axiosInstance.post("/auth/send-login-otp", { email, password });
+      return true;
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to resend OTP");
+      return false;
+    }
+  },
+
+  verifyLogin: async (email, otp) => {
+    set({ isLoggingIn: true });
+    try {
+      const res = await axiosInstance.post("/auth/verify-login", { email, otp });
+      set({ authUser: res.data });
+      toast.success("Logged in successfully!");
+      get().connectSocket();
+      return true;
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Invalid OTP");
+      return false;
+    } finally {
+      set({ isLoggingIn: false });
+    }
+  },
+
+  // ── LOGOUT ──────────────────────────────────────
   logout: async () => {
     try {
       await axiosInstance.post("/auth/logout");
@@ -91,6 +121,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // ── PROFILE ─────────────────────────────────────
   updateProfile: async (data) => {
     set({ isUpdatingProfile: true });
     try {
@@ -98,17 +129,16 @@ export const useAuthStore = create((set, get) => ({
       set({ authUser: res.data });
       toast.success("Profile updated successfully");
     } catch (error) {
-      console.log("error in update profile:", error);
       toast.error(error.response?.data?.message || "Update failed");
     } finally {
       set({ isUpdatingProfile: false });
     }
   },
 
-  // Forgot Password - Send OTP
+  // ── FORGOT PASSWORD ──────────────────────────────
   forgotPassword: async (email) => {
     try {
-      const response = await axiosInstance.post("/auth/forgot-password", { email });
+      await axiosInstance.post("/auth/forgot-password", { email });
       toast.success("Reset OTP sent to your email");
       return true;
     } catch (error) {
@@ -117,10 +147,9 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Verify Reset OTP
   verifyResetOTP: async (email, otp) => {
     try {
-      const response = await axiosInstance.post("/auth/verify-reset-otp", { email, otp });
+      await axiosInstance.post("/auth/verify-reset-otp", { email, otp });
       toast.success("OTP verified");
       set({ resetEmail: email });
       return true;
@@ -130,10 +159,9 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Reset Password
   resetPassword: async (newPassword, confirmPassword) => {
     try {
-      const response = await axiosInstance.post("/auth/reset-password", {
+      await axiosInstance.post("/auth/reset-password", {
         email: get().resetEmail,
         newPassword,
         confirmPassword,
@@ -147,12 +175,12 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Google Authentication
+  // ── GOOGLE AUTH ──────────────────────────────────
   googleAuth: async (credential) => {
     set({ isLoggingIn: true });
     try {
-      const response = await axiosInstance.post("/auth/google-auth", { credential });
-      set({ authUser: response.data });
+      const res = await axiosInstance.post("/auth/google-auth", { credential });
+      set({ authUser: res.data });
       toast.success("Google login successful");
       get().connectSocket();
       return true;
@@ -164,28 +192,20 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // ── SOCKET ──────────────────────────────────────
   connectSocket: () => {
     const { authUser } = get();
     if (!authUser || get().socket?.connected) return;
-
-    const socket = io(BASE_URL, {
-      query: {
-        userId: authUser._id,
-      },
-    });
+    const socket = io(BASE_URL, { query: { userId: authUser._id } });
     socket.connect();
-
-    set({ socket: socket });
-
-    socket.on("getOnlineUsers", (userIds) => {
-      set({ onlineUsers: userIds });
-    });
+    set({ socket });
+    socket.on("getOnlineUsers", (userIds) => set({ onlineUsers: userIds }));
   },
-  
+
   disconnectSocket: () => {
     if (get().socket?.connected) get().socket.disconnect();
   },
-  
+
   resetOTPStates: () => {
     set({ otpSent: false, otpVerified: false, resetEmail: null });
   },

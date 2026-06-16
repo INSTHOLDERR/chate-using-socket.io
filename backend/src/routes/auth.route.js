@@ -2,7 +2,8 @@ import express from "express";
 import {
   sendSignupOTP,
   verifySignupOTP,
-  login,
+  sendLoginOTP,
+  verifyLoginOTP,
   logout,
   updateProfile,
   checkAuth,
@@ -19,8 +20,10 @@ const router = express.Router();
 router.post("/send-signup-otp", sendSignupOTP);
 router.post("/verify-signup", verifySignupOTP);
 
-// Login
-router.post("/login", login);
+// Login with OTP
+router.post("/send-login-otp", sendLoginOTP);
+router.post("/verify-login", verifyLoginOTP);
+
 router.post("/logout", logout);
 
 // Forgot Password
