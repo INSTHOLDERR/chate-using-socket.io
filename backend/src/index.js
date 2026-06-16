@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import dns from "dns";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -11,6 +12,8 @@ import messageRoutes from "./routes/message.route.js";
 import { app, server } from "./lib/socket.js";
 
 dotenv.config();
+
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
 const { PORT, NODE_ENV } = process.env;
 
