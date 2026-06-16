@@ -7,8 +7,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.NODE_ENV === "production" ? true : ["http://localhost:5173"],
-    credentials: true,
+    origin: ["http://localhost:5173"],
   },
 });
 
@@ -31,9 +30,11 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("A user disconnected:", socket.id);
+
     if (userId) {
       delete userSocketMap[userId];
     }
+
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
 });

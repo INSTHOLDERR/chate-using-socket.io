@@ -1,23 +1,15 @@
 import nodemailer from "nodemailer";
 
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-    tls: {
-      rejectUnauthorized: false,
-    },
-  });
-};
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 export const sendOTPEmail = async (email, otp) => {
   try {
-    const transporter = createTransporter();
     const mailOptions = {
       from: `"Chat App" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -34,6 +26,7 @@ export const sendOTPEmail = async (email, otp) => {
         </div>
       `,
     };
+
     await transporter.sendMail(mailOptions);
     return true;
   } catch (error) {
@@ -44,7 +37,6 @@ export const sendOTPEmail = async (email, otp) => {
 
 export const sendPasswordResetOTP = async (email, otp) => {
   try {
-    const transporter = createTransporter();
     const mailOptions = {
       from: `"Chat App" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -61,10 +53,11 @@ export const sendPasswordResetOTP = async (email, otp) => {
         </div>
       `,
     };
+
     await transporter.sendMail(mailOptions);
     return true;
   } catch (error) {
-    console.error("Password reset email error:", error);
+    console.error("Email sending error:", error);
     return false;
   }
 };
