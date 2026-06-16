@@ -6,14 +6,45 @@ import OTP from "../models/otp.model.js";
 import { sendOTPEmail, sendLoginOTPEmail, sendPasswordResetOTP } from "../lib/email.js";
 import crypto from "crypto";
 
-// Generate 6-digit OTP
+// Generate a 6-digit OTP
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// ─────────────────────────────────────────────
-// SIGNUP – Send OTP
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+// SIGNUP FLOW: register → send OTP → verify OTP → chat
+// ─────────────────────────────────────────────────────────
+
+export const signup = async (req, res) => {
+  // Legacy direct-signup (kept for compatibility, not used in OTP flow)
+  try {
+    const { fullName, email, password } = req.body;
+    if (!fullName || !email || !password)
+      return res.status(400).json({ message: "All fields are required" });
+    if (password.length < 6)
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser)
+      return res.status(400).json({ message: "Email already exists" });
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    const newUser = new User({ fullName, email, password: hashedPassword });
+    if (!newUser) return res.status(400).json({ message: "Invalid user data" });
+
+    generateToken(newUser._id, res);
+    await newUser.save();
+    return res.status(201).json({
+      _id: newUser._id, fullName: newUser.fullName, email: newUser.email, profilePic: newUser.profilePic,
+    });
+  } catch (error) {
+    console.log("Error in signup controller:", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Send OTP for signup
 export const sendSignupOTP = async (req, res) => {
   try {
     const { email } = req.body;
@@ -36,15 +67,12 @@ export const sendSignupOTP = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────
-// SIGNUP – Verify OTP & Create Account
-// ─────────────────────────────────────────────
+// Verify OTP and complete signup
 export const verifySignupOTP = async (req, res) => {
   try {
     const { fullName, email, password, otp } = req.body;
     if (!fullName || !email || !password || !otp)
       return res.status(400).json({ message: "All fields are required" });
-
     if (password.length < 6)
       return res.status(400).json({ message: "Password must be at least 6 characters" });
 
@@ -59,17 +87,14 @@ export const verifySignupOTP = async (req, res) => {
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-
     const newUser = new User({ fullName, email, password: hashedPassword });
     await newUser.save();
-    await OTP.deleteOne({ _id: otpRecord._id });
 
+    await OTP.deleteOne({ _id: otpRecord._id });
     generateToken(newUser._id, res);
+
     res.status(201).json({
-      _id: newUser._id,
-      fullName: newUser.fullName,
-      email: newUser.email,
-      profilePic: newUser.profilePic,
+      _id: newUser._id, fullName: newUser.fullName, email: newUser.email, profilePic: newUser.profilePic,
     });
   } catch (error) {
     console.log("Error in verifySignupOTP:", error.message);
@@ -77,21 +102,21 @@ export const verifySignupOTP = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────
-// LOGIN – Send OTP (after password check)
-// ─────────────────────────────────────────────
-export const sendLoginOTP = async (req, res) => {
+// ─────────────────────────────────────────────────────────
+// LOGIN FLOW: credentials → send OTP → verify OTP → chat
+// ─────────────────────────────────────────────────────────
+
+// Step 1: Validate credentials and send login OTP
+export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password)
-      return res.status(400).json({ message: "Email and password are required" });
-
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
+    // Credentials valid — now send OTP
     const otp = generateOTP();
     await OTP.deleteMany({ email, purpose: "login" });
     await OTP.create({ email, otp, purpose: "login" });
@@ -99,21 +124,18 @@ export const sendLoginOTP = async (req, res) => {
     const emailSent = await sendLoginOTPEmail(email, otp);
     if (!emailSent) return res.status(500).json({ message: "Failed to send OTP email" });
 
-    res.status(200).json({ message: "OTP sent to your email" });
+    res.status(200).json({ message: "OTP sent to your email", email });
   } catch (error) {
-    console.log("Error in sendLoginOTP:", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.log("Error in login controller:", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-// ─────────────────────────────────────────────
-// LOGIN – Verify OTP & Complete Login
-// ─────────────────────────────────────────────
+// Step 2: Verify login OTP and issue token
 export const verifyLoginOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    if (!email || !otp)
-      return res.status(400).json({ message: "Email and OTP are required" });
+    if (!email || !otp) return res.status(400).json({ message: "Email and OTP are required" });
 
     const otpRecord = await OTP.findOne({
       email, otp, purpose: "login",
@@ -122,26 +144,24 @@ export const verifyLoginOTP = async (req, res) => {
     if (!otpRecord) return res.status(400).json({ message: "Invalid or expired OTP" });
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     await OTP.deleteOne({ _id: otpRecord._id });
     generateToken(user._id, res);
 
-    res.status(200).json({
-      _id: user._id,
-      fullName: user.fullName,
-      email: user.email,
-      profilePic: user.profilePic,
+    return res.status(200).json({
+      _id: user._id, fullName: user.fullName, email: user.email, profilePic: user.profilePic,
     });
   } catch (error) {
     console.log("Error in verifyLoginOTP:", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
 // LOGOUT
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+
 export const logout = (req, res) => {
   try {
     res.cookie("jwt", "", { maxAge: 0 });
@@ -152,47 +172,11 @@ export const logout = (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────
-// UPDATE PROFILE
-// ─────────────────────────────────────────────
-export const updateProfile = async (req, res) => {
-  try {
-    const { profilePic } = req.body;
-    if (!profilePic)
-      return res.status(400).json({ message: "Profile image is required" });
+// ─────────────────────────────────────────────────────────
+// FORGOT PASSWORD FLOW: email → OTP → reset
+// ─────────────────────────────────────────────────────────
 
-    const uploadResponse = await cloudinary.uploader.upload(profilePic, {
-      folder: "profile_pics",
-    });
-
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user._id,
-      { profilePic: uploadResponse.secure_url },
-      { new: true }
-    );
-
-    return res.status(200).json(updatedUser);
-  } catch (error) {
-    console.log("Update profile error:", error);
-    return res.status(500).json({ message: "Image upload failed" });
-  }
-};
-
-// ─────────────────────────────────────────────
-// CHECK AUTH
-// ─────────────────────────────────────────────
-export const checkAuth = (req, res) => {
-  try {
-    return res.status(200).json(req.user);
-  } catch (error) {
-    console.log("Error in checkAuth controller:", error.message);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
-};
-
-// ─────────────────────────────────────────────
-// FORGOT PASSWORD – Send OTP
-// ─────────────────────────────────────────────
+// Step 1: Confirm email exists and send OTP
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -215,14 +199,11 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────
-// FORGOT PASSWORD – Verify OTP
-// ─────────────────────────────────────────────
+// Step 2: Verify reset OTP
 export const verifyResetOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    if (!email || !otp)
-      return res.status(400).json({ message: "Email and OTP are required" });
+    if (!email || !otp) return res.status(400).json({ message: "Email and OTP are required" });
 
     const otpRecord = await OTP.findOne({
       email, otp, purpose: "reset_password",
@@ -237,18 +218,14 @@ export const verifyResetOTP = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────
-// FORGOT PASSWORD – Reset Password
-// ─────────────────────────────────────────────
+// Step 3: Reset password
 export const resetPassword = async (req, res) => {
   try {
     const { email, newPassword, confirmPassword } = req.body;
     if (!email || !newPassword || !confirmPassword)
       return res.status(400).json({ message: "All fields are required" });
-
     if (newPassword !== confirmPassword)
       return res.status(400).json({ message: "Passwords do not match" });
-
     if (newPassword.length < 6)
       return res.status(400).json({ message: "Password must be at least 6 characters" });
 
@@ -267,14 +244,45 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+// PROFILE
+// ─────────────────────────────────────────────────────────
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { profilePic } = req.body;
+    if (!profilePic) return res.status(400).json({ message: "Profile image is required" });
+
+    const uploadResponse = await cloudinary.uploader.upload(profilePic, { folder: "profile_pics" });
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { profilePic: uploadResponse.secure_url },
+      { new: true }
+    );
+    return res.status(200).json(updatedUser);
+  } catch (error) {
+    console.log("Update profile error:", error);
+    return res.status(500).json({ message: "Image upload failed" });
+  }
+};
+
+export const checkAuth = (req, res) => {
+  try {
+    return res.status(200).json(req.user);
+  } catch (error) {
+    console.log("Error in checkAuth controller:", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// ─────────────────────────────────────────────────────────
 // GOOGLE AUTH
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+
 export const googleAuth = async (req, res) => {
   try {
     const { credential } = req.body;
     const { OAuth2Client } = await import("google-auth-library");
-
     const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
     const ticket = await client.verifyIdToken({
       idToken: credential,
@@ -298,10 +306,7 @@ export const googleAuth = async (req, res) => {
 
     generateToken(user._id, res);
     res.status(200).json({
-      _id: user._id,
-      fullName: user.fullName,
-      email: user.email,
-      profilePic: user.profilePic,
+      _id: user._id, fullName: user.fullName, email: user.email, profilePic: user.profilePic,
     });
   } catch (error) {
     console.log("Error in googleAuth:", error.message);

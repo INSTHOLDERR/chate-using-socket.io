@@ -22,32 +22,25 @@ export const useAuthStore = create((set, get) => ({
       const res = await axiosInstance.get("/auth/check");
       set({ authUser: res.data });
       get().connectSocket();
-    } catch {
+    } catch (error) {
+      console.log("Error in checkAuth:", error);
       set({ authUser: null });
     } finally {
       set({ isCheckingAuth: false });
     }
   },
 
-  // ── SIGNUP ──────────────────────────────────────
+  // ── Signup OTP flow ───────────────────────────────────
   sendSignupOTP: async (email) => {
     try {
-      await axiosInstance.post("/auth/send-signup-otp", { email });
-      toast.success("OTP sent to your email");
-      set({ otpSent: true });
-      return true;
+      const response = await axiosInstance.post("/auth/send-signup-otp", { email });
+      if (response.data.message) {
+        toast.success("OTP sent to your email");
+        set({ otpSent: true });
+        return true;
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to send OTP");
-      return false;
-    }
-  },
-
-  resendSignupOTP: async (email) => {
-    try {
-      await axiosInstance.post("/auth/send-signup-otp", { email });
-      return true;
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to resend OTP");
       return false;
     }
   },
@@ -55,8 +48,8 @@ export const useAuthStore = create((set, get) => ({
   verifySignup: async (formData, otp) => {
     set({ isSigningUp: true });
     try {
-      const res = await axiosInstance.post("/auth/verify-signup", { ...formData, otp });
-      set({ authUser: res.data, otpVerified: true });
+      const response = await axiosInstance.post("/auth/verify-signup", { ...formData, otp });
+      set({ authUser: response.data, otpVerified: true });
       toast.success("Account created successfully!");
       get().connectSocket();
       return true;
@@ -68,32 +61,24 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // ── LOGIN with OTP ───────────────────────────────
-  sendLoginOTP: async (email, password) => {
+  // ── Login OTP flow ────────────────────────────────────
+  // Step 1: validate credentials → server sends OTP
+  login: async (data) => {
     set({ isLoggingIn: true });
     try {
-      await axiosInstance.post("/auth/send-login-otp", { email, password });
+      const res = await axiosInstance.post("/auth/login", data);
       toast.success("OTP sent to your email");
-      return true;
+      return { otpSent: true };
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to send OTP");
-      return false;
+      toast.error(error.response?.data?.message || "Login failed");
+      return { otpSent: false };
     } finally {
       set({ isLoggingIn: false });
     }
   },
 
-  resendLoginOTP: async (email, password) => {
-    try {
-      await axiosInstance.post("/auth/send-login-otp", { email, password });
-      return true;
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to resend OTP");
-      return false;
-    }
-  },
-
-  verifyLogin: async (email, otp) => {
+  // Step 2: verify OTP → issue token → enter chat
+  verifyLoginOTP: async (email, otp) => {
     set({ isLoggingIn: true });
     try {
       const res = await axiosInstance.post("/auth/verify-login", { email, otp });
@@ -102,14 +87,14 @@ export const useAuthStore = create((set, get) => ({
       get().connectSocket();
       return true;
     } catch (error) {
-      toast.error(error.response?.data?.message || "Invalid OTP");
+      toast.error(error.response?.data?.message || "OTP verification failed");
       return false;
     } finally {
       set({ isLoggingIn: false });
     }
   },
 
-  // ── LOGOUT ──────────────────────────────────────
+  // ── Logout ────────────────────────────────────────────
   logout: async () => {
     try {
       await axiosInstance.post("/auth/logout");
@@ -121,7 +106,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // ── PROFILE ─────────────────────────────────────
+  // ── Profile ───────────────────────────────────────────
   updateProfile: async (data) => {
     set({ isUpdatingProfile: true });
     try {
@@ -129,13 +114,14 @@ export const useAuthStore = create((set, get) => ({
       set({ authUser: res.data });
       toast.success("Profile updated successfully");
     } catch (error) {
+      console.log("error in update profile:", error);
       toast.error(error.response?.data?.message || "Update failed");
     } finally {
       set({ isUpdatingProfile: false });
     }
   },
 
-  // ── FORGOT PASSWORD ──────────────────────────────
+  // ── Forgot Password OTP flow ──────────────────────────
   forgotPassword: async (email) => {
     try {
       await axiosInstance.post("/auth/forgot-password", { email });
@@ -162,11 +148,9 @@ export const useAuthStore = create((set, get) => ({
   resetPassword: async (newPassword, confirmPassword) => {
     try {
       await axiosInstance.post("/auth/reset-password", {
-        email: get().resetEmail,
-        newPassword,
-        confirmPassword,
+        email: get().resetEmail, newPassword, confirmPassword,
       });
-      toast.success("Password reset successfully");
+      toast.success("Password reset successfully!");
       set({ resetEmail: null });
       return true;
     } catch (error) {
@@ -175,13 +159,13 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // ── GOOGLE AUTH ──────────────────────────────────
+  // ── Google Auth (no OTP needed) ───────────────────────
   googleAuth: async (credential) => {
     set({ isLoggingIn: true });
     try {
-      const res = await axiosInstance.post("/auth/google-auth", { credential });
-      set({ authUser: res.data });
-      toast.success("Google login successful");
+      const response = await axiosInstance.post("/auth/google-auth", { credential });
+      set({ authUser: response.data });
+      toast.success("Google login successful!");
       get().connectSocket();
       return true;
     } catch (error) {
@@ -192,7 +176,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // ── SOCKET ──────────────────────────────────────
+  // ── Socket ────────────────────────────────────────────
   connectSocket: () => {
     const { authUser } = get();
     if (!authUser || get().socket?.connected) return;
@@ -206,7 +190,5 @@ export const useAuthStore = create((set, get) => ({
     if (get().socket?.connected) get().socket.disconnect();
   },
 
-  resetOTPStates: () => {
-    set({ otpSent: false, otpVerified: false, resetEmail: null });
-  },
+  resetOTPStates: () => set({ otpSent: false, otpVerified: false, resetEmail: null }),
 }));

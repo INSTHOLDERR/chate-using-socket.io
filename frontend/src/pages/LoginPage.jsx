@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import ForgotPasswordModal from "../components/ForgotPasswordModal";
 import OTPModal from "../components/OTPModal";
@@ -8,10 +8,11 @@ import toast from "react-hot-toast";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showOTPModal, setShowOTPModal] = useState(false);
-  const { sendLoginOTP, resendLoginOTP, verifyLogin, isLoggingIn, googleAuth } = useAuthStore();
-  const navigate = useNavigate();
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
+
+  const { login, verifyLoginOTP, isLoggingIn, googleAuth, sendLoginOTP } = useAuthStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,26 +20,28 @@ const LoginPage = () => {
       toast.error("Please fill in all fields");
       return;
     }
-    // Send OTP after validating credentials
-    const success = await sendLoginOTP(formData.email, formData.password);
-    if (success) setShowOTPModal(true);
-  };
-
-  const handleOTPSubmit = async (otp) => {
-    const success = await verifyLogin(formData.email, otp);
-    if (success) {
-      setShowOTPModal(false);
-      navigate("/");
+    // login() now sends OTP instead of logging in directly
+    const result = await login(formData);
+    if (result?.otpSent) {
+      setPendingEmail(formData.email);
+      setShowOTPModal(true);
     }
   };
 
-  const handleResendLoginOTP = async () => {
-    return await resendLoginOTP(formData.email, formData.password);
+  const handleOTPSubmit = async (otp) => {
+    const success = await verifyLoginOTP(pendingEmail, otp);
+    if (success) {
+      setShowOTPModal(false);
+    }
+  };
+
+  const handleOTPResend = async () => {
+    const result = await login(formData);
+    return result?.otpSent === true;
   };
 
   const handleGoogleSuccess = async (response) => {
-    const success = await googleAuth(response.credential);
-    if (success) setTimeout(() => navigate("/"), 100);
+    await googleAuth(response.credential);
   };
 
   const handleGoogleError = () => {
@@ -48,6 +51,7 @@ const LoginPage = () => {
   return (
     <>
       <div className="min-h-screen grid lg:grid-cols-2">
+        {/* LEFT */}
         <div className="flex items-center justify-center px-6 py-10 bg-base-100">
           <div className="w-full max-w-md space-y-6">
             <div>
@@ -96,20 +100,20 @@ const LoginPage = () => {
                 className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoggingIn ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Sending OTP...</span>
-                  </div>
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Sending OTP...
+                  </span>
                 ) : "Login"}
               </button>
             </form>
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-base-200" />
+                <div className="w-full border-t border-base-200"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-base-content/60">Or continue with</span>
+                <span className="px-2 bg-base-100 text-base-content/60">Or continue with</span>
               </div>
             </div>
 
@@ -133,6 +137,7 @@ const LoginPage = () => {
           </div>
         </div>
 
+        {/* RIGHT */}
         <div className="hidden lg:flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600">
           <div className="text-center text-white px-10">
             <h2 className="text-4xl font-bold mb-4">Stay Connected 💬</h2>
@@ -153,9 +158,10 @@ const LoginPage = () => {
         isOpen={showOTPModal}
         onClose={() => setShowOTPModal(false)}
         onSubmit={handleOTPSubmit}
-        onResend={handleResendLoginOTP}
-        email={formData.email}
+        onResend={handleOTPResend}
+        email={pendingEmail}
         title="Verify Login"
+        submitLabel="Verify & Login"
       />
 
       {/* Forgot Password Modal */}

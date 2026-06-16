@@ -1,19 +1,17 @@
 import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import OTPModal from "../components/OTPModal";
 
 const SignUpPage = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+    fullName: "", email: "", password: "", confirmPassword: "",
   });
   const [showOTPModal, setShowOTPModal] = useState(false);
   const [tempFormData, setTempFormData] = useState(null);
-  const { sendSignupOTP, resendSignupOTP, verifySignup, isSigningUp } = useAuthStore();
+  const { sendSignupOTP, verifySignup, isSigningUp } = useAuthStore();
 
   const validateForm = () => {
     if (!formData.fullName.trim()) { toast.error("Full name is required"); return false; }
@@ -39,17 +37,19 @@ const SignUpPage = () => {
     const success = await verifySignup(tempFormData, otp);
     if (success) {
       setShowOTPModal(false);
-      window.location.href = "/";
+      navigate("/");
     }
   };
 
   const handleResend = async () => {
-    return await resendSignupOTP(formData.email);
+    const success = await sendSignupOTP(formData.email);
+    return !!success;
   };
 
   return (
     <>
       <div className="min-h-screen grid lg:grid-cols-2">
+        {/* LEFT */}
         <div className="flex items-center justify-center px-6 py-10 bg-base-100">
           <div className="w-full max-w-md space-y-6">
             <div>
@@ -68,6 +68,7 @@ const SignUpPage = () => {
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                 />
               </div>
+
               <div>
                 <label className="text-sm font-medium text-gray-600">Email</label>
                 <input
@@ -78,6 +79,7 @@ const SignUpPage = () => {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
+
               <div>
                 <label className="text-sm font-medium text-gray-600">Password</label>
                 <input
@@ -88,6 +90,7 @@ const SignUpPage = () => {
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 />
               </div>
+
               <div>
                 <label className="text-sm font-medium text-gray-600">Confirm Password</label>
                 <input
@@ -98,11 +101,18 @@ const SignUpPage = () => {
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 />
               </div>
+
               <button
                 type="submit"
-                className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
+                disabled={isSigningUp}
+                className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition disabled:opacity-50"
               >
-                Send OTP
+                {isSigningUp ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Sending OTP...
+                  </span>
+                ) : "Send OTP & Verify"}
               </button>
             </form>
 
@@ -113,6 +123,7 @@ const SignUpPage = () => {
           </div>
         </div>
 
+        {/* RIGHT */}
         <div className="hidden lg:flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
           <div className="text-center text-white px-10">
             <h2 className="text-4xl font-bold mb-4">Join the Community 💬</h2>
@@ -133,6 +144,7 @@ const SignUpPage = () => {
         onResend={handleResend}
         email={formData.email}
         title="Verify Your Email"
+        submitLabel="Verify & Create Account"
       />
     </>
   );

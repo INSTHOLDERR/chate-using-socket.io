@@ -2,7 +2,7 @@ import express from "express";
 import {
   sendSignupOTP,
   verifySignupOTP,
-  sendLoginOTP,
+  login,
   verifyLoginOTP,
   logout,
   updateProfile,
@@ -16,25 +16,26 @@ import { protectRoute } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// Signup with OTP
+// ── Signup OTP flow ──────────────────────────────────────
 router.post("/send-signup-otp", sendSignupOTP);
 router.post("/verify-signup", verifySignupOTP);
 
-// Login with OTP
-router.post("/send-login-otp", sendLoginOTP);
-router.post("/verify-login", verifyLoginOTP);
+// ── Login OTP flow ───────────────────────────────────────
+router.post("/login", login);           // validates creds, sends OTP
+router.post("/verify-login", verifyLoginOTP); // verifies OTP, issues token
 
+// ── Logout ───────────────────────────────────────────────
 router.post("/logout", logout);
 
-// Forgot Password
-router.post("/forgot-password", forgotPassword);
-router.post("/verify-reset-otp", verifyResetOTP);
-router.post("/reset-password", resetPassword);
+// ── Forgot Password flow ─────────────────────────────────
+router.post("/forgot-password", forgotPassword);   // confirm email, send OTP
+router.post("/verify-reset-otp", verifyResetOTP);  // verify OTP
+router.post("/reset-password", resetPassword);     // set new password
 
-// Google Auth
+// ── Google Auth ──────────────────────────────────────────
 router.post("/google-auth", googleAuth);
 
-// Profile
+// ── Profile ──────────────────────────────────────────────
 router.put("/update-profile", protectRoute, updateProfile);
 router.get("/check", protectRoute, checkAuth);
 
