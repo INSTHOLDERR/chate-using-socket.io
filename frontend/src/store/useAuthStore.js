@@ -30,7 +30,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // ── Signup OTP flow ───────────────────────────────────
+  // Signup OTP 
   sendSignupOTP: async (email) => {
     try {
       const response = await axiosInstance.post("/auth/send-signup-otp", { email });
@@ -61,8 +61,8 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // ── Login OTP flow ────────────────────────────────────
-  // Step 1: validate credentials → server sends OTP
+  // Login OTP 
+
   login: async (data) => {
     set({ isLoggingIn: true });
     try {
@@ -77,7 +77,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Step 2: verify OTP → issue token → enter chat
+
   verifyLoginOTP: async (email, otp) => {
     set({ isLoggingIn: true });
     try {
@@ -94,7 +94,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // ── Logout ────────────────────────────────────────────
+  // Logout 
   logout: async () => {
     try {
       await axiosInstance.post("/auth/logout");
@@ -106,7 +106,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // ── Profile ───────────────────────────────────────────
+  // Profile 
   updateProfile: async (data) => {
     set({ isUpdatingProfile: true });
     try {
@@ -121,7 +121,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // ── Forgot Password OTP flow ──────────────────────────
+
   forgotPassword: async (email) => {
     try {
       await axiosInstance.post("/auth/forgot-password", { email });
@@ -159,7 +159,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // ── Google Auth (no OTP needed) ───────────────────────
+
   googleAuth: async (credential) => {
     set({ isLoggingIn: true });
     try {
@@ -176,7 +176,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // ── Socket ────────────────────────────────────────────
+  // Socket 
   connectSocket: () => {
     const { authUser } = get();
     if (!authUser || get().socket?.connected) return;

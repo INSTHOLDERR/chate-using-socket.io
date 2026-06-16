@@ -16,26 +16,19 @@ import { protectRoute } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// ── Signup OTP flow ──────────────────────────────────────
 router.post("/send-signup-otp", sendSignupOTP);
 router.post("/verify-signup", verifySignupOTP);
 
-// ── Login OTP flow ───────────────────────────────────────
-router.post("/login", login);           // validates creds, sends OTP
-router.post("/verify-login", verifyLoginOTP); // verifies OTP, issues token
-
-// ── Logout ───────────────────────────────────────────────
+router.post("/login", login);          
+router.post("/verify-login", verifyLoginOTP);
 router.post("/logout", logout);
 
-// ── Forgot Password flow ─────────────────────────────────
-router.post("/forgot-password", forgotPassword);   // confirm email, send OTP
-router.post("/verify-reset-otp", verifyResetOTP);  // verify OTP
-router.post("/reset-password", resetPassword);     // set new password
+router.post("/forgot-password", forgotPassword);   
+router.post("/verify-reset-otp", verifyResetOTP);  
+router.post("/reset-password", resetPassword);     
 
-// ── Google Auth ──────────────────────────────────────────
 router.post("/google-auth", googleAuth);
 
-// ── Profile ──────────────────────────────────────────────
 router.put("/update-profile", protectRoute, updateProfile);
 router.get("/check", protectRoute, checkAuth);
 

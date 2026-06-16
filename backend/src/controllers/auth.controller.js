@@ -11,12 +11,10 @@ const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// ─────────────────────────────────────────────────────────
-// SIGNUP FLOW: register → send OTP → verify OTP → chat
-// ─────────────────────────────────────────────────────────
+
+// SIGNUP 
 
 export const signup = async (req, res) => {
-  // Legacy direct-signup (kept for compatibility, not used in OTP flow)
   try {
     const { fullName, email, password } = req.body;
     if (!fullName || !email || !password)
@@ -67,7 +65,7 @@ export const sendSignupOTP = async (req, res) => {
   }
 };
 
-// Verify OTP and complete signup
+// Verify OTP signup
 export const verifySignupOTP = async (req, res) => {
   try {
     const { fullName, email, password, otp } = req.body;
@@ -102,11 +100,8 @@ export const verifySignupOTP = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────
-// LOGIN FLOW: credentials → send OTP → verify OTP → chat
-// ─────────────────────────────────────────────────────────
+// LOGIN 
 
-// Step 1: Validate credentials and send login OTP
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -131,7 +126,7 @@ export const login = async (req, res) => {
   }
 };
 
-// Step 2: Verify login OTP and issue token
+
 export const verifyLoginOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -158,9 +153,9 @@ export const verifyLoginOTP = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────
+
 // LOGOUT
-// ─────────────────────────────────────────────────────────
+
 
 export const logout = (req, res) => {
   try {
@@ -172,11 +167,11 @@ export const logout = (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────
-// FORGOT PASSWORD FLOW: email → OTP → reset
-// ─────────────────────────────────────────────────────────
 
-// Step 1: Confirm email exists and send OTP
+// FORGOT PASSWORD
+
+
+
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -199,7 +194,7 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
-// Step 2: Verify reset OTP
+// Verify reset OTP
 export const verifyResetOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -218,7 +213,7 @@ export const verifyResetOTP = async (req, res) => {
   }
 };
 
-// Step 3: Reset password
+// Reset password
 export const resetPassword = async (req, res) => {
   try {
     const { email, newPassword, confirmPassword } = req.body;
@@ -244,9 +239,9 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────
+
 // PROFILE
-// ─────────────────────────────────────────────────────────
+
 
 export const updateProfile = async (req, res) => {
   try {
@@ -275,9 +270,8 @@ export const checkAuth = (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────
+
 // GOOGLE AUTH
-// ─────────────────────────────────────────────────────────
 
 export const googleAuth = async (req, res) => {
   try {
