@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 import ForgotPasswordModal from "../components/ForgotPasswordModal";
 import toast from "react-hot-toast";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const { login, isLoggingIn } = useAuthStore();
+  const { login, isLoggingIn, googleAuth } = useAuthStore();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,6 +18,17 @@ const LoginPage = () => {
       return;
     }
     await login(formData);
+  };
+
+  const handleGoogleSuccess = async (response) => {
+    const success = await googleAuth(response.credential);
+    if (success) {
+      setTimeout(() => navigate("/"), 100);
+    }
+  };
+
+  const handleGoogleError = () => {
+    toast.error("Google login failed. Please try again.");
   };
 
   return (
@@ -78,6 +91,26 @@ const LoginPage = () => {
                 )}
               </button>
             </form>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-base-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-base-content/60">Or continue with</span>
+              </div>
+            </div>
+
+            <div className="flex justify-center">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                useOneTap
+                theme="filled_blue"
+                shape="rectangular"
+                text="continue_with"
+              />
+            </div>
 
             <p className="text-sm text-center text-base-content/60">
               Don't have an account?{" "}

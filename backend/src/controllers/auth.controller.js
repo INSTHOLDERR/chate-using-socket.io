@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import User from "../models/user.model.js";
 import cloudinary from "../lib/cloudinary.js";
 import { generateToken } from "../lib/utils.js";
@@ -13,8 +14,7 @@ export const signup = async (req, res) => {
     if (password.length < 6)
       return res.status(400).json({ message: "Password must be at least 6 characters" });
     const existingUser = await User.findOne({ email });
-    if (existingUser)
-      return res.status(400).json({ message: "Email already exists" });
+    if (existingUser) return res.status(400).json({ message: "Email already exists" });
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     const newUser = new User({ fullName, email, password: hashedPassword });
@@ -61,8 +61,7 @@ export const logout = (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const { profilePic } = req.body;
-    if (!profilePic)
-      return res.status(400).json({ message: "Profile image is required" });
+    if (!profilePic) return res.status(400).json({ message: "Profile image is required" });
     const uploadResponse = await cloudinary.uploader.upload(profilePic, { folder: "profile_pics" });
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id, { profilePic: uploadResponse.secure_url }, { new: true }
@@ -184,5 +183,38 @@ export const resetPassword = async (req, res) => {
   } catch (error) {
     console.log("Error in resetPassword:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const googleAuth = async (req, res) => {
+  try {
+    const { credential } = req.body;
+    const { OAuth2Client } = await import("google-auth-library");
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { email, name, picture, sub: googleId } = payload;
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = new User({
+        fullName: name,
+        email,
+        password: crypto.randomBytes(20).toString("hex"),
+        profilePic: picture || "",
+        googleId,
+      });
+      await user.save();
+    }
+    generateToken(user._id, res);
+    res.status(200).json({
+      _id: user._id, fullName: user.fullName,
+      email: user.email, profilePic: user.profilePic,
+    });
+  } catch (error) {
+    console.log("Error in googleAuth:", error.message);
+    res.status(500).json({ message: "Google authentication failed" });
   }
 };
