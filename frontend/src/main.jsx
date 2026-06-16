@@ -12,7 +12,7 @@ if (theme === "dark") {
   document.documentElement.classList.remove("dark");
 }
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID 
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

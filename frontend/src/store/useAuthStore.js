@@ -30,6 +30,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // Send OTP for signup
   sendSignupOTP: async (email) => {
     try {
       const response = await axiosInstance.post("/auth/send-signup-otp", { email });
@@ -44,10 +45,14 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // Verify OTP and complete signup
   verifySignup: async (formData, otp) => {
     set({ isSigningUp: true });
     try {
-      const response = await axiosInstance.post("/auth/verify-signup", { ...formData, otp });
+      const response = await axiosInstance.post("/auth/verify-signup", {
+        ...formData,
+        otp,
+      });
       set({ authUser: response.data, otpVerified: true });
       toast.success("Account created successfully");
       get().connectSocket();
@@ -59,6 +64,7 @@ export const useAuthStore = create((set, get) => ({
       set({ isSigningUp: false });
     }
   },
+
 
   login: async (data) => {
     set({ isLoggingIn: true });
@@ -99,9 +105,10 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // Forgot Password - Send OTP
   forgotPassword: async (email) => {
     try {
-      await axiosInstance.post("/auth/forgot-password", { email });
+      const response = await axiosInstance.post("/auth/forgot-password", { email });
       toast.success("Reset OTP sent to your email");
       return true;
     } catch (error) {
@@ -110,9 +117,10 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // Verify Reset OTP
   verifyResetOTP: async (email, otp) => {
     try {
-      await axiosInstance.post("/auth/verify-reset-otp", { email, otp });
+      const response = await axiosInstance.post("/auth/verify-reset-otp", { email, otp });
       toast.success("OTP verified");
       set({ resetEmail: email });
       return true;
@@ -122,9 +130,10 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // Reset Password
   resetPassword: async (newPassword, confirmPassword) => {
     try {
-      await axiosInstance.post("/auth/reset-password", {
+      const response = await axiosInstance.post("/auth/reset-password", {
         email: get().resetEmail,
         newPassword,
         confirmPassword,
@@ -138,6 +147,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // Google Authentication
   googleAuth: async (credential) => {
     set({ isLoggingIn: true });
     try {
@@ -157,16 +167,25 @@ export const useAuthStore = create((set, get) => ({
   connectSocket: () => {
     const { authUser } = get();
     if (!authUser || get().socket?.connected) return;
-    const socket = io(BASE_URL, { query: { userId: authUser._id } });
-    socket.connect();
-    set({ socket });
-    socket.on("getOnlineUsers", (userIds) => set({ onlineUsers: userIds }));
-  },
 
+    const socket = io(BASE_URL, {
+      query: {
+        userId: authUser._id,
+      },
+    });
+    socket.connect();
+
+    set({ socket: socket });
+
+    socket.on("getOnlineUsers", (userIds) => {
+      set({ onlineUsers: userIds });
+    });
+  },
+  
   disconnectSocket: () => {
     if (get().socket?.connected) get().socket.disconnect();
   },
-
+  
   resetOTPStates: () => {
     set({ otpSent: false, otpVerified: false, resetEmail: null });
   },
